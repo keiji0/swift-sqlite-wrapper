@@ -69,7 +69,7 @@ struct QueryTests {
         let connection = try makeConnection()
         let tableName = "TestTable"
         try connection.exec("CREATE TABLE \(tableName) ( value )")
-        try? connection.begin {
+        try? connection.transaction {
             try connection.exec("INSERT INTO \(tableName) VALUES(?)", [ "123" ])
             throw DummyError()
         }

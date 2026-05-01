@@ -135,8 +135,8 @@ public final class Connection {
     }
     
     /// トランザクション処理
-    public func begin(_ block: () throws -> Void) throws {
-        try begin()
+    public func transaction(_ block: () throws -> Void) throws {
+        try beginTransaction()
         do {
             try block()
             try end()
@@ -147,9 +147,9 @@ public final class Connection {
     }
     
     /// トランザクション(値を返す)
-    public func begin<T>(_ block: () throws -> T) throws -> T {
+    public func transaction<T>(_ block: () throws -> T) throws -> T {
         var res: T?
-        try begin {
+        try transaction {
             res = try block()
         }
         return res!
@@ -207,7 +207,7 @@ public final class Connection {
     
     /// トランザクションの開始
     /// トランザクションが入れ子になっている場合はトップレベルのトランザクションが閉じられないとCommitされない
-    private func begin() throws {
+    private func beginTransaction() throws {
         defer { transactionNestLevel += 1 }
         guard transactionNestLevel == 0 else { return }
         try exec("BEGIN")
