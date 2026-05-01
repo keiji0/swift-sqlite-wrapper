@@ -10,7 +10,7 @@ import Foundation
 import SQLite3
 
 /// sqlite3_openへのオプション
-public struct OpenOptions: OptionSet {
+public struct OpenOptions: OptionSet, Sendable {
     public let rawValue: Int32
     
     public static let readOnly     = OpenOptions(rawValue: SQLITE_OPEN_READONLY)

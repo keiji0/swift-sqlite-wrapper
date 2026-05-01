@@ -1,36 +1,44 @@
-import XCTest
+import Testing
+import Foundation
 @testable import SQLiteWapper
 
-final class DatabaseTests: XCTestCase {
-    func testOpen() {
+@Suite
+struct DatabaseTests {
+    @Test
+    func open() throws {
         let dbFile = getTmpFile()
-        XCTAssertNoThrow(try Connection(dbFile))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: dbFile.path))
+        _ = try Connection(dbFile)
+        #expect(FileManager.default.fileExists(atPath: dbFile.path))
     }
-    
-    func test_DB接続失敗() {
+
+    @Test("DB接続失敗")
+    func databaseConnectionFailure() {
         let dbFile = createNotWriteFile()
-        XCTAssertThrowsError(try Connection(dbFile))
+        #expect(throws: Error.self) {
+            _ = try Connection(dbFile)
+        }
     }
-    
-    func test_テーブル一覧を取得できる() {
+
+    @Test("テーブル一覧を取得できる")
+    func fetchesTableNames() throws {
         let dbFile = getTmpFile()
-        let db = try! Connection(dbFile)
-        try! db.exec("CREATE TABLE TestTable ( date DATETIME );")
-        XCTAssertEqual(db.tableNames, ["TestTable"])
+        let db = try Connection(dbFile)
+        try db.exec("CREATE TABLE TestTable ( date DATETIME );")
+        #expect(db.tableNames == ["TestTable"])
     }
-    
-    func test_インメモリで開くことができる() {
-        let db = try! Connection()
-        try! db.exec("CREATE TABLE TestTable ( date DATETIME );")
-        XCTAssertEqual(db.tableNames, ["TestTable"])
+
+    @Test("インメモリで開くことができる")
+    func opensInMemoryDatabase() throws {
+        let db = try Connection()
+        try db.exec("CREATE TABLE TestTable ( date DATETIME );")
+        #expect(db.tableNames == ["TestTable"])
     }
-    
+
     private func getTmpFile() -> URL {
         URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString)
     }
-    
+
     private func createNotWriteFile() -> URL {
         URL(fileURLWithPath: "/").appendingPathComponent(UUID().uuidString)
     }

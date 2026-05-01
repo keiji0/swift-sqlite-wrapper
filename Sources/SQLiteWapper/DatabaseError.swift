@@ -20,7 +20,7 @@ public struct DatabaseError : Error {
 }
 
 /// データベースからのエラー
-public enum DatabaseErrorCode: Int32 {
+public enum DatabaseErrorCode: Int32, Sendable {
     case error = 1 /* Generic error */
     case `internal` =     2   /* Internal logic error in SQLite */
     case perm =         3   /* Access permission denied */
@@ -50,4 +50,3 @@ public enum DatabaseErrorCode: Int32 {
     case notice =      27   /* Notifications from sqlite3_log() */
     case warning =     28   /* Warnings from sqlite3_log() */
 }
-

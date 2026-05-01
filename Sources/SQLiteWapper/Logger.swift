@@ -10,5 +10,8 @@ import Foundation
 import os
 
 extension Logger {
-    static let main: Logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "SqliteWapper")
+    static let main: Logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "SQLiteWapper",
+        category: "SqliteWapper"
+    )
 }
