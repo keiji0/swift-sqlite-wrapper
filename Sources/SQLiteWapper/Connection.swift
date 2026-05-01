@@ -64,7 +64,8 @@ public final class Connection {
         sqlite3_changes(handle)
     }
     
-    ///  値の取得がないクエリ
+    /// 値を取得しないSQLをPrepared Statementとして実行する
+    /// 複数ステートメントの実行には対応していない
     public func exec(_ sql: String, _ params: [Value] = []) throws {
         let stmt = try query(sql, params)
         try _ = stmt.step()
