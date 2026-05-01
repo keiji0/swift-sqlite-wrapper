@@ -1,15 +1,5 @@
-//
-//  OpenOptions.swift
-//  
-//  
-//  Created by keiji0 on 2022/04/23
-//  
-//
-
-import Foundation
 import SQLite3
 
-/// sqlite3_openへのオプション
 public struct OpenOptions: OptionSet, Sendable {
     public let rawValue: Int32
     
