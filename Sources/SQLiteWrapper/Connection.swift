@@ -113,35 +113,10 @@ public final class Connection {
         statements.removeAll()
     }
 
-    /// 定義されている全てのテーブル名を取得
-    public func tableNames() throws -> [String] {
-        try rows("SELECT tbl_name FROM sqlite_master WHERE type='table' ORDER BY tbl_name").map {
-            try $0.value(0, as: String.self)
-        }
-    }
-
-    /// 指定テーブルが定義されているか？
-    public func hasTable(_ tableName: String) throws -> Bool {
-        try tableNames().contains(tableName)
-    }
-
     /// キャンセル
     /// どのスレッドから実行しても問題ない
     public func cancel() {
         sqlite3_interrupt(handle)
-    }
-
-    /// ユーザーバージョンを取得する
-    /// SQLite内部で使用されないユーザーが自由に設定できるバージョン
-    /// 独自のバージョン管理を行いたい場合などに使用する
-    /// 未設定の場合は0が設定されている
-    public func userVersion() throws -> Int64 {
-        try scalar("PRAGMA user_version", as: Int64.self) ?? 0
-    }
-
-    /// ユーザーバージョンを設定する
-    public func setUserVersion(_ version: Int64) throws {
-        try execute("PRAGMA user_version = \(version)")
     }
 
     /// トランザクション処理
