@@ -2,7 +2,13 @@ import Foundation
 import SQLite3
 import os
 
+/// データベースとの接続
+/// クエリはこのクラスから行う。参照が切れると自動的にデータベースはクローズされます。
 public final class Connection {
+    /// 接続を開始
+    /// - Parameters:
+    ///   - path: SQLiteのファイルパス
+    ///   - options: 接続オプション一覧
     public init(_ path: String, options: OpenOptions = .default) throws {
         self.path = path
         var openedHandle: OpaquePointer?
@@ -23,10 +29,12 @@ public final class Connection {
         Logger.main.info("Opened SQLite database version=\(Database.version), path=\(path)")
     }
 
+    /// URL指定で接続を開始
     public convenience init(_ url: URL, options: OpenOptions = .default) throws {
         try self.init(url.path, options: options)
     }
 
+    /// インメモリでデータベースに接続
     public convenience init(options: OpenOptions = .default) throws {
         try self.init(":memory:", options: options)
     }
@@ -39,14 +47,20 @@ public final class Connection {
         }
     }
 
+    /// テーブルがロックされている時のビジータイムを設定
+    /// - Parameter milliseconds: ビジータイム（ミリ秒）
+    /// マルチスレッド接続の場合にこの設定がないとSQLITE_BUSYが発生する
     public func setBusyTimeout(_ milliseconds: Int32) throws {
         try check(sqlite3_busy_timeout(handle, milliseconds), phase: .step)
     }
 
+    /// 変更された行の数を取得する
     public var changes: Int {
         Int(sqlite3_changes(handle))
     }
 
+    /// 値を取得しないSQLをPrepared Statementとして実行する
+    /// 複数ステートメントの実行には対応していない
     public func execute(_ sql: String, _ parameters: [any DatabaseValueConvertible] = []) throws {
         let statement = try query(sql, parameters)
         let result = try statement.step()
@@ -56,6 +70,8 @@ public final class Connection {
         }
     }
 
+    /// SQLからステートメントを作成する
+    /// 同一SQL文のステートメントはキャッシュして再利用する
     public func prepare(_ sql: String) throws -> Statement {
         if let statement = statements[sql] {
             return statement
@@ -66,6 +82,8 @@ public final class Connection {
         return statement
     }
 
+    /// クエリ送信
+    /// ステートメントはキャッシュされるため、スキーマ変更前のタイミングではclearStatementCacheしておくと安全
     public func query(_ sql: String, _ parameters: [any DatabaseValueConvertible] = []) throws -> Statement {
         Logger.main.trace("query: \(sql)")
         let statement = try prepare(sql)
@@ -73,10 +91,12 @@ public final class Connection {
         return statement
     }
 
+    /// 取得した行一覧を配列として取得
     public func rows(_ sql: String, _ parameters: [any DatabaseValueConvertible] = []) throws -> [Row] {
         try query(sql, parameters).fetchAll()
     }
 
+    /// 単一の値を取得
     public func scalar<T: DatabaseValueConvertible>(
         _ sql: String,
         _ parameters: [any DatabaseValueConvertible] = [],
@@ -88,32 +108,44 @@ public final class Connection {
         return try row.value(0, as: type)
     }
 
+    /// ステートメントキャッシュの削除
     public func clearStatementCache() {
         statements.removeAll()
     }
 
+    /// 定義されている全てのテーブル名を取得
     public func tableNames() throws -> [String] {
         try rows("SELECT tbl_name FROM sqlite_master WHERE type='table' ORDER BY tbl_name").map {
             try $0.value(0, as: String.self)
         }
     }
 
+    /// 指定テーブルが定義されているか？
     public func hasTable(_ tableName: String) throws -> Bool {
         try tableNames().contains(tableName)
     }
 
+    /// キャンセル
+    /// どのスレッドから実行しても問題ない
     public func cancel() {
         sqlite3_interrupt(handle)
     }
 
+    /// ユーザーバージョンを取得する
+    /// SQLite内部で使用されないユーザーが自由に設定できるバージョン
+    /// 独自のバージョン管理を行いたい場合などに使用する
+    /// 未設定の場合は0が設定されている
     public func userVersion() throws -> Int64 {
         try scalar("PRAGMA user_version", as: Int64.self) ?? 0
     }
 
+    /// ユーザーバージョンを設定する
     public func setUserVersion(_ version: Int64) throws {
         try execute("PRAGMA user_version = \(version)")
     }
 
+    /// トランザクション処理
+    /// トランザクションが入れ子になっている場合はトップレベルのトランザクションが閉じられないとCommitされない
     @discardableResult
     public func transaction<T>(_ block: () throws -> T) throws -> T {
         try beginTransaction()
@@ -132,6 +164,8 @@ public final class Connection {
 
     let handle: OpaquePointer
 
+    /// SQLiteのAPIをコールした結果を検査する
+    /// エラーが発生するとSQLiteErrorを投げる
     @discardableResult
     func check(_ result: Int32, sql: String? = nil, phase: SQLiteError.Phase) throws -> Int32 {
         switch result {
@@ -149,10 +183,13 @@ public final class Connection {
         return String(cString: message)
     }
 
+    // MARK: - Private
+
     private let path: String
     private var transactionDepth = 0
     private var statements: [String: Statement] = [:]
 
+    /// トランザクションの開始
     private func beginTransaction() throws {
         if transactionDepth == 0 {
             try execute("BEGIN")
@@ -160,6 +197,7 @@ public final class Connection {
         transactionDepth += 1
     }
 
+    /// トランザクションの終了
     private func commitTransaction() throws {
         guard transactionDepth > 0 else {
             throw SQLiteError(message: "No active transaction.", phase: .step)
@@ -170,6 +208,7 @@ public final class Connection {
         }
     }
 
+    /// ロールバックする
     private func rollbackTransaction() -> Error? {
         guard transactionDepth > 0 else {
             return nil

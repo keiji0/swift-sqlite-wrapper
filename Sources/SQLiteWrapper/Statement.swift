@@ -3,7 +3,9 @@ import SQLite3
 
 private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
+/// SQLのステートメント
 public final class Statement {
+    /// このステートメントが実行するSQL
     public let sql: String
 
     init(connection: Connection, sql: String) throws {
@@ -27,6 +29,7 @@ public final class Statement {
         sqlite3_finalize(handle)
     }
 
+    /// ステートメントに値を設定する
     public func bind(_ values: some Collection<any DatabaseValueConvertible>) throws {
         try reset()
         for (offset, value) in values.enumerated() {
@@ -34,6 +37,7 @@ public final class Statement {
         }
     }
 
+    /// 評価後の行を取得する。なければnilが戻る
     public func fetchRow() throws -> Row? {
         switch try step() {
         case .row:
@@ -43,6 +47,7 @@ public final class Statement {
         }
     }
 
+    /// 評価後の行を配列として取得する
     public func fetchAll() throws -> [Row] {
         var rows: [Row] = []
         while let row = try fetchRow() {
@@ -51,15 +56,19 @@ public final class Statement {
         return rows
     }
 
+    /// 評価後の行のシーケンスを取得する
+    /// SQLiteの実行エラーを握り潰さないよう、各要素はResultで返す
     public func rows() -> RowSequence {
         RowSequence(statement: self)
     }
 
+    /// ステートメントを再利用できる状態に戻す
     public func reset() throws {
         try connection.check(sqlite3_reset(handle), sql: sql, phase: .reset)
         try clearBindings()
     }
 
+    /// ステートメントに設定された値を削除する
     public func clearBindings() throws {
         try connection.check(sqlite3_clear_bindings(handle), sql: sql, phase: .clearBindings)
     }
@@ -69,6 +78,7 @@ public final class Statement {
         case done
     }
 
+    /// ステートメントを1ステップ評価する
     func step() throws -> StepResult {
         let result = try connection.check(sqlite3_step(handle), sql: sql, phase: .step)
         switch result {
@@ -84,6 +94,7 @@ public final class Statement {
     private let handle: OpaquePointer
     private unowned let connection: Connection
 
+    /// SQLiteに値をバインドする
     private func bind(_ value: DatabaseValue, at index: Int) throws {
         let result: Int32
         switch value {
@@ -104,6 +115,7 @@ public final class Statement {
     }
 }
 
+/// SQLiteの行を順番に取得するシーケンス
 public struct RowSequence: Sequence {
     public typealias Element = Result<Row, Error>
 

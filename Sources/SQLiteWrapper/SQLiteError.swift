@@ -1,12 +1,22 @@
 import Foundation
 import SQLite3
 
+/// SQLiteのエラー
+/// SQLiteの結果コード、メッセージ、実行SQL、失敗した処理フェーズを保持する
 public struct SQLiteError: Error, LocalizedError, Sendable {
+    /// SQLiteの結果コード
     public let code: SQLiteErrorCode?
+
+    /// SQLiteまたはラッパーが返すエラーメッセージ
     public let message: String
+
+    /// エラー発生時に実行していたSQL
     public let sql: String?
+
+    /// エラーが発生した処理フェーズ
     public let phase: Phase
 
+    /// SQLite操作のどの段階で失敗したか
     public enum Phase: String, Sendable {
         case open
         case prepare
@@ -44,6 +54,7 @@ public struct SQLiteError: Error, LocalizedError, Sendable {
     }
 }
 
+/// データベースからのエラー
 public enum SQLiteErrorCode: Int32, Sendable {
     case error = 1
     case `internal` = 2

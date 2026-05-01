@@ -1,5 +1,6 @@
 import SQLite3
 
+/// sqlite3_openへのオプション
 public struct OpenOptions: OptionSet, Sendable {
     public let rawValue: Int32
     

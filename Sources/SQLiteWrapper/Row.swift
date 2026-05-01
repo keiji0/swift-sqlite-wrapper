@@ -1,19 +1,24 @@
 import Foundation
 import SQLite3
 
+/// 行を表すモデル
 public struct Row: Sendable {
+    /// カラム数を取得
     public var count: Int {
         values.count
     }
 
+    /// 指定カラムがnilかどうか？
     public func isNull(_ index: Int) throws -> Bool {
         try value(at: index).columnType == .null
     }
 
+    /// カラムのタイプを取得
     public func type(_ index: Int) throws -> ColumnType {
         try value(at: index).columnType
     }
 
+    /// 指定カラムの値を取得
     public func value<T: DatabaseValueConvertible>(
         _ index: Int,
         as type: T.Type = T.self
@@ -21,9 +26,12 @@ public struct Row: Sendable {
         try T(databaseValue: value(at: index))
     }
 
+    /// 指定カラムの値をDatabaseValueとして取得
     public func databaseValue(_ index: Int) throws -> DatabaseValue {
         try value(at: index)
     }
+
+    // MARK: - Internal
 
     init(_ handle: OpaquePointer) throws {
         let columnCount = Int(sqlite3_column_count(handle))
@@ -31,6 +39,8 @@ public struct Row: Sendable {
             try Row.readValue(handle, index: index)
         }
     }
+
+    // MARK: - Private
 
     private let values: [DatabaseValue]
 

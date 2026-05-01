@@ -1,5 +1,7 @@
 import Foundation
 
+/// SQLiteのカラム値
+/// Bind時とSelectからの値を共通して扱う値を表す
 public enum DatabaseValue: Equatable, Sendable {
     case integer(Int64)
     case real(Double)
@@ -7,6 +9,7 @@ public enum DatabaseValue: Equatable, Sendable {
     case blob(Data)
     case null
 
+    /// 値に対応するSQLiteのプリミティブな型
     public var columnType: ColumnType {
         switch self {
         case .integer:
@@ -23,10 +26,17 @@ public enum DatabaseValue: Equatable, Sendable {
     }
 }
 
+/// SQLiteに保存でき、SQLiteから読み取れる値を表すプロトコル
+/// アプリケーションが必要であれば独自の型を追加することができる
 public protocol DatabaseValueConvertible {
+    /// SQLiteにバインドする値
     var databaseValue: DatabaseValue { get }
+
+    /// 行から取得した値を生成する
     init(databaseValue: DatabaseValue) throws
 }
+
+// MARK: - Column Values
 
 extension Int: DatabaseValueConvertible {
     public var databaseValue: DatabaseValue { .integer(Int64(self)) }
@@ -106,6 +116,7 @@ extension Bool: DatabaseValueConvertible {
 }
 
 extension Optional: DatabaseValueConvertible where Wrapped: DatabaseValueConvertible {
+    /// nilはSQLiteのNULLとして扱う
     public var databaseValue: DatabaseValue {
         switch self {
         case .some(let value):
