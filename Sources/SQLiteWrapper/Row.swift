@@ -19,6 +19,7 @@ public struct Row: Sendable {
     }
 
     /// 指定カラムの値を取得
+    /// - Precondition: `index`は`0..<count`の範囲内であること。
     public func value(_ index: Int) -> DatabaseValue {
         precondition(
             values.indices.contains(index),
