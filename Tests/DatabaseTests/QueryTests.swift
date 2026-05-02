@@ -12,14 +12,6 @@ struct QueryTests {
         #expect(try connection.scalar("SELECT value FROM TestTable")?.intValue() == 123)
     }
 
-    @Test("Int32を保存できる")
-    func storesInt32() throws {
-        let connection = try makeConnection()
-        try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(Int32(321))])
-        #expect(try connection.scalar("SELECT value FROM TestTable")?.int32Value() == Int32(321))
-    }
-
     @Test("Int64を保存できる")
     func storesInt64() throws {
         let connection = try makeConnection()

@@ -60,13 +60,6 @@ public enum DatabaseValue: Equatable, Sendable {
         return value
     }
 
-    public func int32Value() throws -> Int32 {
-        guard case .integer(let value) = self else {
-            throw SQLiteError.valueMismatch(expected: "Int32", actual: columnType)
-        }
-        return Int32(value)
-    }
-
     public func doubleValue() throws -> Double {
         guard case .real(let value) = self else {
             throw SQLiteError.valueMismatch(expected: "Double", actual: columnType)
