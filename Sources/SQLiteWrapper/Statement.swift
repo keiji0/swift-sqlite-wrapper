@@ -58,7 +58,7 @@ public final class Statement {
 
     /// 評価後の行のシーケンスを取得する
     /// SQLiteの実行エラーを握り潰さないよう、各要素はResultで返す
-    public func rows() -> RowSequence {
+    public func rows() -> some Sequence<Result<Row, Error>> {
         RowSequence(statement: self)
     }
 
@@ -116,24 +116,24 @@ public final class Statement {
 }
 
 /// SQLiteの行を順番に取得するシーケンス
-public struct RowSequence: Sequence {
-    public typealias Element = Result<Row, Error>
+private struct RowSequence: Sequence {
+    typealias Element = Result<Row, Error>
 
-    fileprivate let statement: Statement
+    let statement: Statement
 
-    public func makeIterator() -> Iterator {
+    func makeIterator() -> Iterator {
         Iterator(statement: statement)
     }
 
-    public struct Iterator: IteratorProtocol {
-        fileprivate let statement: Statement
+    struct Iterator: IteratorProtocol {
+        let statement: Statement
         private var isFinished = false
 
-        fileprivate init(statement: Statement) {
+        init(statement: Statement) {
             self.statement = statement
         }
 
-        public mutating func next() -> Result<Row, Error>? {
+        mutating func next() -> Result<Row, Error>? {
             guard !isFinished else {
                 return nil
             }
