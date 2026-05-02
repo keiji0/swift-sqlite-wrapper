@@ -41,11 +41,11 @@ let row = try statement.fetchRow()
 let name = row?.value(0).stringValue()
 ```
 
-Statements are cached by SQL string inside `Connection`. Clear the cache before
-reusing SQL across schema changes.
+`Connection` does not cache statements. Keep a prepared `Statement` yourself
+when you want to reuse it.
 
 ```swift
-db.clearStatementCache()
+let reusable = try db.prepare("SELECT name FROM items WHERE id = ?")
 ```
 
 ## Transactions

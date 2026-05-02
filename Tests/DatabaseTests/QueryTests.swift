@@ -193,26 +193,21 @@ struct QueryTests {
         #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable")?.intValue() == 0)
     }
 
-    @Test("statement cacheを明示的にクリアできる")
-    func clearsStatementCache() throws {
+    @Test("同じSQLでもprepareは新しいstatementを返す")
+    func prepareReturnsNewStatementForSameSQL() throws {
         let connection = try makeConnection()
         let first = try connection.prepare("SELECT 1")
         let second = try connection.prepare("SELECT 1")
-        #expect(first === second)
-
-        connection.clearStatementCache()
-        let third = try connection.prepare("SELECT 1")
-        #expect(first !== third)
+        #expect(first !== second)
     }
 
-    @Test("スキーマ変更後にstatement cacheをクリアして再利用できる")
-    func reusesAfterSchemaChangeWhenCacheIsCleared() throws {
+    @Test("スキーマ変更後も新しいstatementで再利用できる")
+    func reusesAfterSchemaChange() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
         _ = try connection.prepare("SELECT value FROM TestTable")
         try connection.execute("DROP TABLE TestTable")
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        connection.clearStatementCache()
 
         try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("ok")])
         #expect(try connection.scalar("SELECT value FROM TestTable")?.stringValue() == "ok")

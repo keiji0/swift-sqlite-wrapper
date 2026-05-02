@@ -40,7 +40,6 @@ public final class Connection {
     }
 
     deinit {
-        statements.removeAll()
         let result = sqlite3_close(handle)
         if result != SQLITE_OK {
             Logger.main.error("Failed to close SQLite database path=\(self.path), result=\(result), message=\(Connection.errorMessage(for: self.handle))")
@@ -71,21 +70,12 @@ public final class Connection {
     }
 
     /// SQLからステートメントを作成する
-    /// 同一SQL文のステートメントはキャッシュして再利用する
     public func prepare(_ sql: String) throws -> Statement {
-        if let statement = statements[sql] {
-            return statement
-        }
-
-        let statement = try Statement(connection: self, sql: sql)
-        statements[sql] = statement
-        return statement
+        try Statement(connection: self, sql: sql)
     }
 
     /// クエリ送信
-    /// ステートメントはキャッシュされるため、スキーマ変更前のタイミングではclearStatementCacheしておくと安全
     public func query(_ sql: String, _ parameters: [DatabaseValue] = []) throws -> Statement {
-        Logger.main.trace("query: \(sql)")
         let statement = try prepare(sql)
         try statement.bind(parameters)
         return statement
@@ -102,11 +92,6 @@ public final class Connection {
             return nil
         }
         return row.value(0)
-    }
-
-    /// ステートメントキャッシュの削除
-    public func clearStatementCache() {
-        statements.removeAll()
     }
 
     /// キャンセル
@@ -158,7 +143,6 @@ public final class Connection {
 
     private let path: String
     private var transactionDepth = 0
-    private var statements: [String: Statement] = [:]
 
     /// トランザクションの開始
     private func beginTransaction() throws {
