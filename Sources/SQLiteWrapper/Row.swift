@@ -30,6 +30,11 @@ public struct Row: Sendable {
         return values[index]
     }
 
+    /// 指定カラムの値をSwiftの型として取得
+    public func value<T: DatabaseValueConvertible>(_ index: Int) throws -> T {
+        try T.fromDatabaseValue(value(index))
+    }
+
     // MARK: - Internal
 
     init(_ handle: OpaquePointer) throws {

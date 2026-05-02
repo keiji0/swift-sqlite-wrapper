@@ -83,6 +83,41 @@ public enum DatabaseValue: Equatable, Sendable {
 
 }
 
+/// SQLiteの値からSwiftの型へ変換できる型
+public protocol DatabaseValueConvertible {
+    static func fromDatabaseValue(_ value: DatabaseValue) throws -> Self
+}
+
+extension Int: DatabaseValueConvertible {
+    public static func fromDatabaseValue(_ value: DatabaseValue) throws -> Int {
+        try value.intValue()
+    }
+}
+
+extension Int64: DatabaseValueConvertible {
+    public static func fromDatabaseValue(_ value: DatabaseValue) throws -> Int64 {
+        try value.int64Value()
+    }
+}
+
+extension Double: DatabaseValueConvertible {
+    public static func fromDatabaseValue(_ value: DatabaseValue) throws -> Double {
+        try value.doubleValue()
+    }
+}
+
+extension String: DatabaseValueConvertible {
+    public static func fromDatabaseValue(_ value: DatabaseValue) throws -> String {
+        try value.stringValue()
+    }
+}
+
+extension Data: DatabaseValueConvertible {
+    public static func fromDatabaseValue(_ value: DatabaseValue) throws -> Data {
+        try value.dataValue()
+    }
+}
+
 extension DatabaseValue: ExpressibleByIntegerLiteral {
     public init(integerLiteral value: Int64) {
         self = .integer(value)

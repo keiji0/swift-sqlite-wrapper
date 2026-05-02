@@ -106,6 +106,27 @@ struct QueryTests {
         #expect(row.isNull(3))
     }
 
+    @Test("型を指定してカラム値を取得できる")
+    func fetchesTypedColumnValues() throws {
+        let connection = try makeConnection()
+        let data = try #require("blob".data(using: .utf8))
+        try connection.execute("CREATE TABLE TestTable (intValue INTEGER, int64Value INTEGER, realValue REAL, textValue TEXT, blobValue BLOB)")
+        try connection.execute("INSERT INTO TestTable VALUES (?, ?, ?, ?, ?)", [123, .init(Int64.max), 4.5, "text", .init(data)])
+
+        let row = try #require(try connection.query("SELECT intValue, int64Value, realValue, textValue, blobValue FROM TestTable").fetchRow())
+        let intValue: Int = try row.value(0)
+        let int64Value: Int64 = try row.value(1)
+        let realValue: Double = try row.value(2)
+        let textValue: String = try row.value(3)
+        let blobValue: Data = try row.value(4)
+
+        #expect(intValue == 123)
+        #expect(int64Value == Int64.max)
+        #expect(realValue == 4.5)
+        #expect(textValue == "text")
+        #expect(blobValue == data)
+    }
+
     @Test("配列として行を取得できる")
     func fetchesRowsAsArray() throws {
         let connection = try makeConnection()
