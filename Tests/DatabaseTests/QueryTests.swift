@@ -53,14 +53,6 @@ struct QueryTests {
         #expect(try connection.scalar("SELECT value FROM TestTable")?.dataValue() == data)
     }
 
-    @Test("Boolを保存できる")
-    func storesBool() throws {
-        let connection = try makeConnection()
-        try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(true)])
-        #expect(try connection.scalar("SELECT value FROM TestTable")?.boolValue() == true)
-    }
-
     @Test("NULLを保存し読み取れる")
     func storesAndReadsNull() throws {
         let connection = try makeConnection()
@@ -107,6 +99,19 @@ struct QueryTests {
         #expect(row.type(0) == .integer)
         #expect(row.type(1) == .text)
         #expect(row.type(2) == .blob)
+    }
+
+    @Test("リテラルでDatabaseValueを指定できる")
+    func acceptsDatabaseValueLiterals() throws {
+        let connection = try makeConnection()
+        try connection.execute("CREATE TABLE TestTable (intValue INTEGER, realValue REAL, textValue TEXT, nullValue TEXT)")
+        try connection.execute("INSERT INTO TestTable VALUES (?, ?, ?, ?)", [123, 4.5, "text", nil])
+
+        let row = try #require(try connection.query("SELECT intValue, realValue, textValue, nullValue FROM TestTable").fetchRow())
+        #expect(try row.value(0).intValue() == 123)
+        #expect(try row.value(1).doubleValue() == 4.5)
+        #expect(try row.value(2).stringValue() == "text")
+        #expect(row.isNull(3))
     }
 
     @Test("配列として行を取得できる")

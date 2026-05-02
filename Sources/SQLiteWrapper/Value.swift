@@ -33,10 +33,6 @@ public enum DatabaseValue: Equatable, Sendable {
         self = .blob(value)
     }
 
-    public init(_ value: Bool) {
-        self = .integer(value ? 1 : 0)
-    }
-
     /// 値に対応するSQLiteのプリミティブな型
     public var columnType: ColumnType {
         switch self {
@@ -92,13 +88,30 @@ public enum DatabaseValue: Equatable, Sendable {
         return value
     }
 
-    public func boolValue() throws -> Bool {
-        guard case .integer(let value) = self else {
-            throw SQLiteError.valueMismatch(expected: "Bool", actual: columnType)
-        }
-        return value != 0
-    }
+}
 
+extension DatabaseValue: ExpressibleByIntegerLiteral {
+    public init(integerLiteral value: Int64) {
+        self = .integer(value)
+    }
+}
+
+extension DatabaseValue: ExpressibleByFloatLiteral {
+    public init(floatLiteral value: Double) {
+        self = .real(value)
+    }
+}
+
+extension DatabaseValue: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self = .text(value)
+    }
+}
+
+extension DatabaseValue: ExpressibleByNilLiteral {
+    public init(nilLiteral: ()) {
+        self = .null
+    }
 }
 
 extension SQLiteError {
