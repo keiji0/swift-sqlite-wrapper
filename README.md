@@ -22,7 +22,7 @@ let rows = try db.rows("SELECT id, name, note FROM items ORDER BY id")
 for row in rows {
     let id = try row.value(0).intValue()
     let name = try row.value(1).stringValue()
-    let note = try row.value(2)
+    let note = row.value(2)
     print(id, name, note as Any)
 }
 ```
@@ -38,7 +38,7 @@ let count = try db.scalar("SELECT COUNT(*) FROM items")?.intValue()
 ```swift
 let statement = try db.query("SELECT name FROM items WHERE id = ?", [.init(1)])
 let row = try statement.fetchRow()
-let name = try row?.value(0).stringValue()
+let name = row?.value(0).stringValue()
 ```
 
 Statements are cached by SQL string inside `Connection`. Clear the cache before

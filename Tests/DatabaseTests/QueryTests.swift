@@ -68,8 +68,8 @@ struct QueryTests {
         try connection.execute("INSERT INTO TestTable VALUES (?)", [.null])
 
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
-        #expect(try row.isNull(0))
-        #expect(try row.value(0) == .null)
+        #expect(row.isNull(0))
+        #expect(row.value(0) == .null)
     }
 
     @Test("NULLを基本型として読むと型不一致エラー")
@@ -96,18 +96,6 @@ struct QueryTests {
         }
     }
 
-    @Test("範囲外カラムでエラーを返す")
-    func throwsOnOutOfBoundsColumn() throws {
-        let connection = try makeConnection()
-        try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("text")])
-        let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
-
-        #expect(throws: SQLiteError.self) {
-            _ = try row.value(1).stringValue()
-        }
-    }
-
     @Test("カラム数と型を取得できる")
     func fetchesColumnMetadata() throws {
         let connection = try makeConnection()
@@ -116,9 +104,9 @@ struct QueryTests {
 
         let row = try #require(try connection.query("SELECT value1, value2, value3 FROM TestTable").fetchRow())
         #expect(row.count == 3)
-        #expect(try row.type(0) == .integer)
-        #expect(try row.type(1) == .text)
-        #expect(try row.type(2) == .blob)
+        #expect(row.type(0) == .integer)
+        #expect(row.type(1) == .text)
+        #expect(row.type(2) == .blob)
     }
 
     @Test("配列として行を取得できる")
