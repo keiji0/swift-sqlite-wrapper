@@ -69,7 +69,7 @@ struct QueryTests {
 
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
         #expect(try row.isNull(0))
-        #expect(try row.databaseValue(0) == .null)
+        #expect(try row.value(0) == .null)
     }
 
     @Test("NULLを基本型として読むと型不一致エラー")
@@ -80,7 +80,7 @@ struct QueryTests {
 
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
         #expect(throws: SQLiteError.self) {
-            _ = try row.databaseValue(0).intValue()
+            _ = try row.value(0).intValue()
         }
     }
 
@@ -92,7 +92,7 @@ struct QueryTests {
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
 
         #expect(throws: SQLiteError.self) {
-            _ = try row.databaseValue(0).intValue()
+            _ = try row.value(0).intValue()
         }
     }
 
@@ -104,7 +104,7 @@ struct QueryTests {
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
 
         #expect(throws: SQLiteError.self) {
-            _ = try row.databaseValue(1).stringValue()
+            _ = try row.value(1).stringValue()
         }
     }
 
@@ -132,7 +132,7 @@ struct QueryTests {
         }
 
         let values = try connection.rows("SELECT value FROM TestTable ORDER BY value").map {
-            try $0.databaseValue(0).stringValue()
+            try $0.value(0).stringValue()
         }
         #expect(values == records)
     }
@@ -145,7 +145,7 @@ struct QueryTests {
 
         let results = Array(try connection.query("SELECT value FROM TestTable").rows())
         let row = try #require(try results.first?.get())
-        #expect(try row.databaseValue(0).stringValue() == "1")
+        #expect(try row.value(0).stringValue() == "1")
     }
 
     @Test("トランザクションをコミットできる")

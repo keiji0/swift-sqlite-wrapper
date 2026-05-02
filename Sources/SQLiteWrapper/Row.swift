@@ -10,17 +10,17 @@ public struct Row: Sendable {
 
     /// 指定カラムがnilかどうか？
     public func isNull(_ index: Int) throws -> Bool {
-        try value(at: index).columnType == .null
+        try storageValue(at: index).columnType == .null
     }
 
     /// カラムのタイプを取得
     public func type(_ index: Int) throws -> ColumnType {
-        try value(at: index).columnType
+        try storageValue(at: index).columnType
     }
 
-    /// 指定カラムの値をDatabaseValueとして取得
-    public func databaseValue(_ index: Int) throws -> DatabaseValue {
-        try value(at: index)
+    /// 指定カラムの値を取得
+    public func value(_ index: Int) throws -> DatabaseValue {
+        try storageValue(at: index)
     }
 
     // MARK: - Internal
@@ -36,7 +36,7 @@ public struct Row: Sendable {
 
     private let values: [DatabaseValue]
 
-    private func value(at index: Int) throws -> DatabaseValue {
+    private func storageValue(at index: Int) throws -> DatabaseValue {
         guard values.indices.contains(index) else {
             throw SQLiteError(
                 message: "Column index \(index) is out of bounds. Column count is \(values.count).",

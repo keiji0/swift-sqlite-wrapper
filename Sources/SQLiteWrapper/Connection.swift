@@ -101,7 +101,7 @@ public final class Connection {
         guard let row = try query(sql, parameters).fetchRow() else {
             return nil
         }
-        return try row.databaseValue(0)
+        return try row.value(0)
     }
 
     /// ステートメントキャッシュの削除
