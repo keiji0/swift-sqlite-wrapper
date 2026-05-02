@@ -19,6 +19,8 @@ public struct Row: Sendable {
     }
 
     /// 指定カラムの値を取得
+    /// 配列アクセスと同じく範囲外の`index`はプログラムミスとして扱うため、
+    /// 軽量な値アクセスを優先して`throws`にはしていない。
     /// - Precondition: `index`は`0..<count`の範囲内であること。
     public func value(_ index: Int) -> DatabaseValue {
         precondition(
