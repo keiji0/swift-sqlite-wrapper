@@ -61,7 +61,7 @@ public final class Connection {
 
     /// 値を取得しないSQLをPrepared Statementとして実行する
     /// 複数ステートメントの実行には対応していない
-    public func execute(_ sql: String, _ parameters: [any DatabaseValueConvertible] = []) throws {
+    public func execute(_ sql: String, _ parameters: [DatabaseValue] = []) throws {
         let statement = try query(sql, parameters)
         let result = try statement.step()
         try statement.reset()
@@ -84,7 +84,7 @@ public final class Connection {
 
     /// クエリ送信
     /// ステートメントはキャッシュされるため、スキーマ変更前のタイミングではclearStatementCacheしておくと安全
-    public func query(_ sql: String, _ parameters: [any DatabaseValueConvertible] = []) throws -> Statement {
+    public func query(_ sql: String, _ parameters: [DatabaseValue] = []) throws -> Statement {
         Logger.main.trace("query: \(sql)")
         let statement = try prepare(sql)
         try statement.bind(parameters)
@@ -92,20 +92,16 @@ public final class Connection {
     }
 
     /// 取得した行一覧を配列として取得
-    public func rows(_ sql: String, _ parameters: [any DatabaseValueConvertible] = []) throws -> [Row] {
+    public func rows(_ sql: String, _ parameters: [DatabaseValue] = []) throws -> [Row] {
         try query(sql, parameters).fetchAll()
     }
 
     /// 単一の値を取得
-    public func scalar<T: DatabaseValueConvertible>(
-        _ sql: String,
-        _ parameters: [any DatabaseValueConvertible] = [],
-        as type: T.Type = T.self
-    ) throws -> T? {
+    public func scalar(_ sql: String, _ parameters: [DatabaseValue] = []) throws -> DatabaseValue? {
         guard let row = try query(sql, parameters).fetchRow() else {
             return nil
         }
-        return try row.value(0, as: type)
+        return try row.databaseValue(0)
     }
 
     /// ステートメントキャッシュの削除

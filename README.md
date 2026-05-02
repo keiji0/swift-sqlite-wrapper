@@ -2,7 +2,7 @@
 
 SQLiteWrapper is a small synchronous Swift wrapper around SQLite.
 
-It keeps SQL visible, while adding typed parameter binding, typed row reads,
+It keeps SQL visible, while adding explicit SQLite value binding, row reads,
 statement reuse, transactions, and structured SQLite errors.
 
 ## Usage
@@ -15,14 +15,14 @@ let db = try Connection(options: .default)
 try db.execute("CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT, note TEXT)")
 try db.execute(
     "INSERT INTO items (name, note) VALUES (?, ?)",
-    ["Keyboard", Optional<String>.none]
+    [.init("Keyboard"), .null]
 )
 
 let rows = try db.rows("SELECT id, name, note FROM items ORDER BY id")
 for row in rows {
-    let id = try row.value(0, as: Int.self)
-    let name = try row.value(1, as: String.self)
-    let note = try row.value(2, as: String?.self)
+    let id = try row.databaseValue(0).intValue()
+    let name = try row.databaseValue(1).stringValue()
+    let note = try row.databaseValue(2)
     print(id, name, note as Any)
 }
 ```
@@ -30,15 +30,15 @@ for row in rows {
 ## Scalar Values
 
 ```swift
-let count = try db.scalar("SELECT COUNT(*) FROM items", as: Int.self)
+let count = try db.scalar("SELECT COUNT(*) FROM items")?.intValue()
 ```
 
 ## Prepared Statements
 
 ```swift
-let statement = try db.query("SELECT name FROM items WHERE id = ?", [1])
+let statement = try db.query("SELECT name FROM items WHERE id = ?", [.init(1)])
 let row = try statement.fetchRow()
-let name = try row?.value(0, as: String.self)
+let name = try row?.databaseValue(0).stringValue()
 ```
 
 Statements are cached by SQL string inside `Connection`. Clear the cache before
@@ -52,8 +52,8 @@ db.clearStatementCache()
 
 ```swift
 try db.transaction {
-    try db.execute("INSERT INTO items (name) VALUES (?)", ["A"])
-    try db.execute("INSERT INTO items (name) VALUES (?)", ["B"])
+    try db.execute("INSERT INTO items (name) VALUES (?)", [.init("A")])
+    try db.execute("INSERT INTO items (name) VALUES (?)", [.init("B")])
 }
 ```
 

@@ -3,7 +3,7 @@ public extension Connection {
     /// 定義されている全てのテーブル名を取得
     func tableNames() throws -> [String] {
         try rows("SELECT tbl_name FROM sqlite_master WHERE type='table' ORDER BY tbl_name").map {
-            try $0.value(0, as: String.self)
+            try $0.databaseValue(0).stringValue()
         }
     }
 

@@ -8,40 +8,40 @@ struct QueryTests {
     func storesInt() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [123])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: Int.self) == 123)
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(123)])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.intValue() == 123)
     }
 
     @Test("Int32を保存できる")
     func storesInt32() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [Int32(321)])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: Int32.self) == Int32(321))
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(Int32(321))])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.int32Value() == Int32(321))
     }
 
     @Test("Int64を保存できる")
     func storesInt64() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [Int64.max])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: Int64.self) == Int64.max)
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(Int64.max)])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.int64Value() == Int64.max)
     }
 
     @Test("Doubleを保存できる")
     func storesDouble() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value REAL)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [123.25])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: Double.self) == 123.25)
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(123.25)])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.doubleValue() == 123.25)
     }
 
     @Test("Stringを保存できる")
     func storesString() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", ["123"])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: String.self) == "123")
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("123")])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.stringValue() == "123")
     }
 
     @Test("Dataを保存できる")
@@ -49,40 +49,38 @@ struct QueryTests {
         let connection = try makeConnection()
         let data = try #require("123".data(using: .utf8))
         try connection.execute("CREATE TABLE TestTable (value BLOB)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [data])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: Data.self) == data)
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(data)])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.dataValue() == data)
     }
 
     @Test("Boolを保存できる")
     func storesBool() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [true])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: Bool.self) == true)
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(true)])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.boolValue() == true)
     }
 
-    @Test("OptionalでNULLを保存し読み取れる")
-    func storesAndReadsNullWithOptional() throws {
+    @Test("NULLを保存し読み取れる")
+    func storesAndReadsNull() throws {
         let connection = try makeConnection()
-        let value: String? = nil
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [value])
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.null])
 
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
         #expect(try row.isNull(0))
-        #expect(try row.value(0, as: String?.self) == nil)
+        #expect(try row.databaseValue(0) == .null)
     }
 
-    @Test("非OptionalでNULLを読むと型不一致エラー")
-    func throwsWhenReadingNullAsNonOptional() throws {
+    @Test("NULLを基本型として読むと型不一致エラー")
+    func throwsWhenReadingNullAsBasicType() throws {
         let connection = try makeConnection()
-        let value: Int? = nil
         try connection.execute("CREATE TABLE TestTable (value INTEGER)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", [value])
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.null])
 
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
         #expect(throws: SQLiteError.self) {
-            _ = try row.value(0, as: Int.self)
+            _ = try row.databaseValue(0).intValue()
         }
     }
 
@@ -90,11 +88,11 @@ struct QueryTests {
     func throwsOnTypeMismatch() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", ["text"])
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("text")])
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
 
         #expect(throws: SQLiteError.self) {
-            _ = try row.value(0, as: Int.self)
+            _ = try row.databaseValue(0).intValue()
         }
     }
 
@@ -102,11 +100,11 @@ struct QueryTests {
     func throwsOnOutOfBoundsColumn() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", ["text"])
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("text")])
         let row = try #require(try connection.query("SELECT value FROM TestTable").fetchRow())
 
         #expect(throws: SQLiteError.self) {
-            _ = try row.value(1, as: String.self)
+            _ = try row.databaseValue(1).stringValue()
         }
     }
 
@@ -114,7 +112,7 @@ struct QueryTests {
     func fetchesColumnMetadata() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value1 INTEGER, value2 TEXT, value3 BLOB)")
-        try connection.execute("INSERT INTO TestTable VALUES (?, ?, ?)", [1, "2", Data()])
+        try connection.execute("INSERT INTO TestTable VALUES (?, ?, ?)", [.init(1), .init("2"), .init(Data())])
 
         let row = try #require(try connection.query("SELECT value1, value2, value3 FROM TestTable").fetchRow())
         #expect(row.count == 3)
@@ -130,11 +128,11 @@ struct QueryTests {
 
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
         for record in records {
-            try connection.execute("INSERT INTO TestTable VALUES (?)", [record])
+            try connection.execute("INSERT INTO TestTable VALUES (?)", [.init(record)])
         }
 
         let values = try connection.rows("SELECT value FROM TestTable ORDER BY value").map {
-            try $0.value(0, as: String.self)
+            try $0.databaseValue(0).stringValue()
         }
         #expect(values == records)
     }
@@ -143,11 +141,11 @@ struct QueryTests {
     func fetchesRowsAsResultSequence() throws {
         let connection = try makeConnection()
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
-        try connection.execute("INSERT INTO TestTable VALUES (?)", ["1"])
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("1")])
 
         let results = Array(try connection.query("SELECT value FROM TestTable").rows())
         let row = try #require(try results.first?.get())
-        #expect(try row.value(0, as: String.self) == "1")
+        #expect(try row.databaseValue(0).stringValue() == "1")
     }
 
     @Test("トランザクションをコミットできる")
@@ -156,10 +154,10 @@ struct QueryTests {
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
 
         try connection.transaction {
-            try connection.execute("INSERT INTO TestTable VALUES (?)", ["123"])
+            try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("123")])
         }
 
-        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable", as: Int.self) == 1)
+        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable")?.intValue() == 1)
     }
 
     @Test("ロールバックできる")
@@ -169,12 +167,12 @@ struct QueryTests {
 
         #expect(throws: DummyError.self) {
             try connection.transaction {
-                try connection.execute("INSERT INTO TestTable VALUES (?)", ["123"])
+                try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("123")])
                 throw DummyError()
             }
         }
 
-        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable", as: Int.self) == 0)
+        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable")?.intValue() == 0)
     }
 
     @Test("ネストしたトランザクションをまとめてコミットできる")
@@ -183,13 +181,13 @@ struct QueryTests {
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
 
         try connection.transaction {
-            try connection.execute("INSERT INTO TestTable VALUES (?)", ["1"])
+            try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("1")])
             try connection.transaction {
-                try connection.execute("INSERT INTO TestTable VALUES (?)", ["2"])
+                try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("2")])
             }
         }
 
-        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable", as: Int.self) == 2)
+        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable")?.intValue() == 2)
     }
 
     @Test("ネストしたトランザクションをまとめてロールバックできる")
@@ -199,15 +197,15 @@ struct QueryTests {
 
         #expect(throws: DummyError.self) {
             try connection.transaction {
-                try connection.execute("INSERT INTO TestTable VALUES (?)", ["1"])
+                try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("1")])
                 try connection.transaction {
-                    try connection.execute("INSERT INTO TestTable VALUES (?)", ["2"])
+                    try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("2")])
                     throw DummyError()
                 }
             }
         }
 
-        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable", as: Int.self) == 0)
+        #expect(try connection.scalar("SELECT COUNT(*) FROM TestTable")?.intValue() == 0)
     }
 
     @Test("statement cacheを明示的にクリアできる")
@@ -231,8 +229,8 @@ struct QueryTests {
         try connection.execute("CREATE TABLE TestTable (value TEXT)")
         connection.clearStatementCache()
 
-        try connection.execute("INSERT INTO TestTable VALUES (?)", ["ok"])
-        #expect(try connection.scalar("SELECT value FROM TestTable", as: String.self) == "ok")
+        try connection.execute("INSERT INTO TestTable VALUES (?)", [.init("ok")])
+        #expect(try connection.scalar("SELECT value FROM TestTable")?.stringValue() == "ok")
     }
 
     @Test("Cancelできる")
@@ -250,7 +248,7 @@ struct QueryTests {
 
             let count = 500_000
             let values = (0..<count).map { _ in "(?)" }.joined(separator: ",")
-            let params: [any DatabaseValueConvertible] = (0..<count).map { _ in Int.random(in: 0...Int.max) }
+            let params = (0..<count).map { _ in DatabaseValue(Int.random(in: 0...Int.max)) }
 
             try connection.execute("INSERT INTO Hoge VALUES \(values)", params)
 
@@ -260,7 +258,7 @@ struct QueryTests {
             }
 
             let error = try #require(throws: SQLiteError.self) {
-                _ = try connection.scalar("SELECT COUNT(*) FROM Hoge WHERE val = ?", ["33"], as: Int.self)
+                _ = try connection.scalar("SELECT COUNT(*) FROM Hoge WHERE val = ?", [.init("33")])?.intValue()
             }
             #expect(error.code == .interrupt)
         }

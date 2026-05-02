@@ -9,6 +9,34 @@ public enum DatabaseValue: Equatable, Sendable {
     case blob(Data)
     case null
 
+    public init(_ value: Int) {
+        self = .integer(Int64(value))
+    }
+
+    public init(_ value: Int64) {
+        self = .integer(value)
+    }
+
+    public init(_ value: Int32) {
+        self = .integer(Int64(value))
+    }
+
+    public init(_ value: Double) {
+        self = .real(value)
+    }
+
+    public init(_ value: String) {
+        self = .text(value)
+    }
+
+    public init(_ value: Data) {
+        self = .blob(value)
+    }
+
+    public init(_ value: Bool) {
+        self = .integer(value ? 1 : 0)
+    }
+
     /// 値に対応するSQLiteのプリミティブな型
     public var columnType: ColumnType {
         switch self {
@@ -24,115 +52,53 @@ public enum DatabaseValue: Equatable, Sendable {
             return .null
         }
     }
-}
 
-/// SQLiteに保存でき、SQLiteから読み取れる値を表すプロトコル
-/// アプリケーションが必要であれば独自の型を追加することができる
-public protocol DatabaseValueConvertible {
-    /// SQLiteにバインドする値
-    var databaseValue: DatabaseValue { get }
-
-    /// 行から取得した値を生成する
-    init(databaseValue: DatabaseValue) throws
-}
-
-// MARK: - Column Values
-
-extension Int: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .integer(Int64(self)) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .integer(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "Int", actual: databaseValue.columnType)
-        }
-        self = Int(value)
-    }
-}
-
-extension Int64: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .integer(self) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .integer(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "Int64", actual: databaseValue.columnType)
-        }
-        self = value
-    }
-}
-
-extension Int32: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .integer(Int64(self)) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .integer(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "Int32", actual: databaseValue.columnType)
-        }
-        self = Int32(value)
-    }
-}
-
-extension Double: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .real(self) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .real(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "Double", actual: databaseValue.columnType)
-        }
-        self = value
-    }
-}
-
-extension String: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .text(self) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .text(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "String", actual: databaseValue.columnType)
-        }
-        self = value
-    }
-}
-
-extension Data: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .blob(self) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .blob(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "Data", actual: databaseValue.columnType)
-        }
-        self = value
-    }
-}
-
-extension Bool: DatabaseValueConvertible {
-    public var databaseValue: DatabaseValue { .integer(self ? 1 : 0) }
-
-    public init(databaseValue: DatabaseValue) throws {
-        guard case .integer(let value) = databaseValue else {
-            throw SQLiteError.valueMismatch(expected: "Bool", actual: databaseValue.columnType)
-        }
-        self = value != 0
-    }
-}
-
-extension Optional: DatabaseValueConvertible where Wrapped: DatabaseValueConvertible {
-    /// nilはSQLiteのNULLとして扱う
-    public var databaseValue: DatabaseValue {
-        switch self {
-        case .some(let value):
-            return value.databaseValue
-        case .none:
-            return .null
-        }
+    public func intValue() throws -> Int {
+        Int(try int64Value())
     }
 
-    public init(databaseValue: DatabaseValue) throws {
-        if case .null = databaseValue {
-            self = .none
-        } else {
-            self = .some(try Wrapped(databaseValue: databaseValue))
+    public func int64Value() throws -> Int64 {
+        guard case .integer(let value) = self else {
+            throw SQLiteError.valueMismatch(expected: "Int64", actual: columnType)
         }
+        return value
     }
+
+    public func int32Value() throws -> Int32 {
+        guard case .integer(let value) = self else {
+            throw SQLiteError.valueMismatch(expected: "Int32", actual: columnType)
+        }
+        return Int32(value)
+    }
+
+    public func doubleValue() throws -> Double {
+        guard case .real(let value) = self else {
+            throw SQLiteError.valueMismatch(expected: "Double", actual: columnType)
+        }
+        return value
+    }
+
+    public func stringValue() throws -> String {
+        guard case .text(let value) = self else {
+            throw SQLiteError.valueMismatch(expected: "String", actual: columnType)
+        }
+        return value
+    }
+
+    public func dataValue() throws -> Data {
+        guard case .blob(let value) = self else {
+            throw SQLiteError.valueMismatch(expected: "Data", actual: columnType)
+        }
+        return value
+    }
+
+    public func boolValue() throws -> Bool {
+        guard case .integer(let value) = self else {
+            throw SQLiteError.valueMismatch(expected: "Bool", actual: columnType)
+        }
+        return value != 0
+    }
+
 }
 
 extension SQLiteError {

@@ -30,10 +30,10 @@ public final class Statement {
     }
 
     /// ステートメントに値を設定する
-    public func bind(_ values: some Collection<any DatabaseValueConvertible>) throws {
+    public func bind(_ values: some Collection<DatabaseValue>) throws {
         try reset()
         for (offset, value) in values.enumerated() {
-            try bind(value.databaseValue, at: offset + 1)
+            try bind(value, at: offset + 1)
         }
     }
 

@@ -5,7 +5,7 @@ public extension Connection {
     /// 独自のバージョン管理を行いたい場合などに使用する
     /// 未設定の場合は0が設定されている
     func userVersion() throws -> Int64 {
-        try scalar("PRAGMA user_version", as: Int64.self) ?? 0
+        try scalar("PRAGMA user_version")?.int64Value() ?? 0
     }
 
     /// ユーザーバージョンを設定する

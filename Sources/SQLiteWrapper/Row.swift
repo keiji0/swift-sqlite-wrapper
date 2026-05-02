@@ -18,14 +18,6 @@ public struct Row: Sendable {
         try value(at: index).columnType
     }
 
-    /// 指定カラムの値を取得
-    public func value<T: DatabaseValueConvertible>(
-        _ index: Int,
-        as type: T.Type = T.self
-    ) throws -> T {
-        try T(databaseValue: value(at: index))
-    }
-
     /// 指定カラムの値をDatabaseValueとして取得
     public func databaseValue(_ index: Int) throws -> DatabaseValue {
         try value(at: index)
