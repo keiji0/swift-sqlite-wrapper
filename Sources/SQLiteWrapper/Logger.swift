@@ -7,11 +7,8 @@
 //
 
 import Foundation
-import os
+import Logging
 
 extension Logger {
-    static let main: Logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "SQLiteWrapper",
-        category: "SQLiteWrapper"
-    )
+    static let main = Logger(label: Bundle.main.bundleIdentifier ?? "SQLiteWrapper")
 }

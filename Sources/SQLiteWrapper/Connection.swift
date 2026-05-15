@@ -1,6 +1,6 @@
 import Foundation
+import Logging
 import SQLite3
-import os
 
 /// データベースとの接続
 /// クエリはこのクラスから行う。参照が切れると自動的にデータベースはクローズされます。
