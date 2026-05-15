@@ -26,7 +26,13 @@ public final class Connection {
         }
         handle = openedHandle
 
-        Logger.main.info("Opened SQLite database version=\(Database.version), path=\(path)")
+        Logger.main.info(
+            "Opened SQLite database",
+            metadata: [
+                "version": "\(Database.version)",
+                "path": "\(path)",
+            ]
+        )
     }
 
     /// URL指定で接続を開始
@@ -42,7 +48,14 @@ public final class Connection {
     deinit {
         let result = sqlite3_close(handle)
         if result != SQLITE_OK {
-            Logger.main.error("Failed to close SQLite database path=\(self.path), result=\(result), message=\(Connection.errorMessage(for: self.handle))")
+            Logger.main.error(
+                "Failed to close SQLite database",
+                metadata: [
+                    "path": "\(self.path)",
+                    "result": "\(result)",
+                    "message": "\(Connection.errorMessage(for: self.handle))",
+                ]
+            )
         }
     }
 
